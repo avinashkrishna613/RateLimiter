@@ -27,7 +27,7 @@ public class FixedWindowRateLimiter implements RateLimiter {
     }
 
     private static long floorSeconds(long currentTimeMillis, int customSeconds) {
-        return currentTimeMillis - (currentTimeMillis % customSeconds);
+        return currentTimeMillis - (currentTimeMillis % (customSeconds*1000));
     }
 
     @Override
