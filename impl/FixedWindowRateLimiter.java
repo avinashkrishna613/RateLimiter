@@ -7,6 +7,8 @@ import pojos.Request;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * In a fixed window rate limiter, there will be a limit on no of requests per time frame.
@@ -24,6 +26,10 @@ public class FixedWindowRateLimiter implements RateLimiter {
     public FixedWindowRateLimiter(FixedWindow fixedWindow, Integer THRESHOLD) {
         this.fixedWindow = fixedWindow;
         this.THRESHOLD = THRESHOLD;
+        ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        scheduledExecutorService.scheduleAtFixedRate(() -> {
+            // clean up part
+        }, 1, 2*fixedWindow.getNumber(), fixedWindow.getTimeUnit());
     }
 
     private static long floorSeconds(long currentTimeMillis, int customSeconds) {
