@@ -4,7 +4,7 @@ public class Request {
     private String userId;
     private String ip;
     private String location;
-    private long timestamp = System.currentTimeMillis();
+    private long timestamp;
 
     public String getUserId() {
         return userId;
@@ -40,6 +40,7 @@ public class Request {
 
     public Request(String userId) {
         this.userId = userId;
+        this.timestamp = System.currentTimeMillis();
     }
 
     @Override
