@@ -1,5 +1,6 @@
 import impl.FixedWindowRateLimiter;
 import impl.SlidingWindowRateLimiter;
+import impl.TokenBucketRateLimiter;
 import interfaces.RateLimiter;
 import pojos.FixedWindow;
 import pojos.Request;
@@ -12,7 +13,7 @@ public class Main {
     public static void main(String[] args) throws InterruptedException {
         FixedWindow fixedWindow = new FixedWindow(5, TimeUnit.SECONDS);
         final Integer THRESHOLD = 4;
-        RateLimiter rateLimiter = new SlidingWindowRateLimiter(fixedWindow, THRESHOLD);
+        RateLimiter rateLimiter = new TokenBucketRateLimiter(fixedWindow, THRESHOLD);
         ExecutorService executorService = Executors.newFixedThreadPool(10);
         for (int i = 0; i < 10; i++) {
             executorService.execute(() -> {
