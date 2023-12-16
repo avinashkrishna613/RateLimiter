@@ -10,6 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import static helpers.TimeHelper.findFloorValue;
+
 /**
  * In a fixed window rate limiter, there will be a limit on no of requests per time frame.
  * Let's say 100 req/min, then we divide the time into fixed windows
@@ -38,7 +40,7 @@ public class FixedWindowRateLimiter implements RateLimiter {
 
     @Override
     public boolean allowRequest(Request request) {
-        long seconds = floorSeconds(request.getTimestamp(), findFloorValue());
+        long seconds = floorSeconds(request.getTimestamp(), findFloorValue(fixedWindow));
         String key = request.getUserId() + ":" + seconds;
         lockMap.putIfAbsent(key, new Object());
         synchronized (lockMap.get(key)) {
@@ -49,15 +51,6 @@ public class FixedWindowRateLimiter implements RateLimiter {
             noOfRequests.put(key, presentRequests+1);
             return true;
         }
-    }
-
-    private int findFloorValue() {
-        switch (fixedWindow.getTimeUnit()) {
-            case SECONDS: return fixedWindow.getNumber();
-            case MINUTES: return fixedWindow.getNumber()*60;
-            case HOURS: return fixedWindow.getNumber()*60*60;
-        }
-        return 0;
     }
 
 }

@@ -4,9 +4,10 @@ import interfaces.RateLimiter;
 import pojos.FixedWindow;
 import pojos.Request;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static helpers.TimeHelper.findFloorValue;
 
 /**
  * In a sliding window, the window will move forward based on the request timings.
@@ -35,7 +36,7 @@ public class SlidingWindowRateLimiter implements RateLimiter {
         synchronized (lockMap.get(request.getUserId())) {
             System.out.println("Thread : " + Thread.currentThread().getName() + " aquired lock at " + System.currentTimeMillis());
             // find the start window for the current request
-            long value = findFloorValue()*1000;
+            long value = findFloorValue(fixedWindow)*1000;
             long startWindow = timestamp - value;
 
             // for the request user id how many requests reside from startWindow to timeStamp
@@ -55,14 +56,5 @@ public class SlidingWindowRateLimiter implements RateLimiter {
             }
         }
         return false;
-    }
-
-    private int findFloorValue() {
-        switch (fixedWindow.getTimeUnit()) {
-            case SECONDS: return fixedWindow.getNumber();
-            case MINUTES: return fixedWindow.getNumber()*60;
-            case HOURS: return fixedWindow.getNumber()*60*60;
-        }
-        return 0;
     }
 }

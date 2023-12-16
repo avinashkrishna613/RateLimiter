@@ -5,11 +5,11 @@ import pojos.FixedWindow;
 import pojos.Request;
 import pojos.TokenBucket;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static helpers.TimeHelper.findFloorValue;
 
 /**
  * Say we have a bucket whose capacity is defined as the number of tokens that it can hold. Whenever a consumer wants to access an API endpoint, it must get a token from the bucket. We remove a token from the bucket
@@ -22,6 +22,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * we would add only 30 more tokens at the start of the next minute to bring the bucket up to capacity.
  * On the other hand, if we exhaust all the tokens in 40 seconds, we would wait for 20 seconds to refill the bucket.
  */
+// https://www.baeldung.com/spring-bucket4j
 public class TokenBucketRateLimiter implements RateLimiter {
 
     private TokenBucket tokenBucket;
@@ -33,17 +34,8 @@ public class TokenBucketRateLimiter implements RateLimiter {
         ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         scheduledExecutorService.scheduleAtFixedRate(() -> {
                 this.tokenBucket.resetTokensToThreshold();
-        }, findFloorValue(), tokenBucket.getFixedWindow().getNumber(), tokenBucket.getFixedWindow().getTimeUnit());
-    }
-
-    private int findFloorValue() {
-        FixedWindow fixedWindow = tokenBucket.getFixedWindow();
-        switch (fixedWindow.getTimeUnit()) {
-            case SECONDS: return fixedWindow.getNumber();
-            case MINUTES: return fixedWindow.getNumber()*60;
-            case HOURS: return fixedWindow.getNumber()*60*60;
-        }
-        return 0;
+        }, findFloorValue(tokenBucket.getFixedWindow()), tokenBucket.getFixedWindow().getNumber(),
+                tokenBucket.getFixedWindow().getTimeUnit());
     }
 
     @Override
