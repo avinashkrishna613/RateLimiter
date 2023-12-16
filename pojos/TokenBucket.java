@@ -4,6 +4,7 @@ public class TokenBucket {
     private int tokens;
     private FixedWindow fixedWindow;
     private int THRESHOLD;
+    private long lastFilledAt;
 
     public int getTokens() {
         return tokens;
@@ -33,10 +34,20 @@ public class TokenBucket {
         this.tokens = tokens;
         this.fixedWindow = fixedWindow;
         this.THRESHOLD = THRESHOLD;
+        this.lastFilledAt = System.currentTimeMillis();
+    }
+
+    public long getLastFilledAt() {
+        return lastFilledAt;
+    }
+
+    public void setLastFilledAt(long lastFilledAt) {
+        this.lastFilledAt = lastFilledAt;
     }
 
     public void resetTokensToThreshold() {
         System.out.println("REFILL CALLED AT : " + System.currentTimeMillis());
         tokens = THRESHOLD;
+        this.lastFilledAt = System.currentTimeMillis();
     }
 }

@@ -5,8 +5,7 @@ import pojos.FixedWindow;
 import pojos.Request;
 import pojos.TokenBucket;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static helpers.TimeHelper.findFloorValue;
@@ -25,17 +24,30 @@ import static helpers.TimeHelper.findFloorValue;
 // https://www.baeldung.com/spring-bucket4j
 public class TokenBucketRateLimiter implements RateLimiter {
 
-    private TokenBucket tokenBucket;
     private final ReentrantLock reentrantLock = new ReentrantLock();
+    // usually in token bucket, the bucket is per user/ip address
+    private final ConcurrentHashMap<String, TokenBucket> mapUserToBucket =
+            new ConcurrentHashMap<>();
+    private final FixedWindow fixedWindow;
+    private final int requestLimit;
+    private static final ExecutorService executorservice = Executors.newCachedThreadPool();
 
     public TokenBucketRateLimiter(FixedWindow fixedWindow, int requestLimit) {
-        this.tokenBucket = new TokenBucket(requestLimit, fixedWindow, requestLimit);
-        // we schedule a thread to refill the token bucket for every window time
+        this.fixedWindow = fixedWindow;
+        this.requestLimit = requestLimit;
+        // we need to schedule in such a way, that when a user bucket lastfilledtime and currentime difference is window time
+        // then we need to refill the bucket with tokens
         ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         scheduledExecutorService.scheduleAtFixedRate(() -> {
-                this.tokenBucket.resetTokensToThreshold();
-        }, findFloorValue(tokenBucket.getFixedWindow()), tokenBucket.getFixedWindow().getNumber(),
-                tokenBucket.getFixedWindow().getTimeUnit());
+            System.out.println("Executing schedule thread.");
+               mapUserToBucket.values().stream().filter(bucket -> (System.currentTimeMillis() - bucket.getLastFilledAt() >= findFloorValue(bucket.getFixedWindow())*1000) && bucket.getTokens() < requestLimit
+               ).forEach(tokenBucket -> {
+                   executorservice.submit(() -> {
+                       tokenBucket.resetTokensToThreshold();
+                   });
+               });
+            executorservice.shutdown();
+        }, fixedWindow.getNumber(), fixedWindow.getNumber(), fixedWindow.getTimeUnit());
     }
 
     @Override
@@ -44,6 +56,9 @@ public class TokenBucketRateLimiter implements RateLimiter {
         // if we have enough tokens we accept
         // if we don't have enough tokens we don't accept.
         reentrantLock.lock();
+        String userId = request.getUserId();
+        TokenBucket tokenBucket = mapUserToBucket.getOrDefault(userId, new TokenBucket(this.requestLimit, this.fixedWindow, this.requestLimit));
+        mapUserToBucket.put(userId, tokenBucket);
         int tokens = tokenBucket.getTokens();
         if (tokens > 0) {
             tokenBucket.setTokens(tokens-1);

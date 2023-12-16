@@ -1,5 +1,3 @@
-import impl.FixedWindowRateLimiter;
-import impl.SlidingWindowRateLimiter;
 import impl.TokenBucketRateLimiter;
 import interfaces.RateLimiter;
 import pojos.FixedWindow;
@@ -9,6 +7,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+// https://codingchallenges.fyi/challenges/challenge-rate-limiter/
 public class Main {
     public static void main(String[] args) throws InterruptedException {
         FixedWindow fixedWindow = new FixedWindow(5, TimeUnit.SECONDS);
